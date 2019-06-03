@@ -103,6 +103,12 @@ class ServerManager(object):
                      sys.exit(3)
                 print("Starting https on port " + str(server_config['port']))
                 server = server_module(server_config['domain'], int(server_config['port']), server_config['timeout'], wait, self.__loggers, server_config['cert_path'])
+            elif server_config['mode'] == "proxy":
+                if "config" not in server_config:
+                     self.error("config is not complete set for proxy " + handler)
+                     sys.exit(3)
+                print("Starting proxy on port " + str(server_config['port']))
+                server = server_module(server_config['domain'], int(server_config['port']), server_config['timeout'], wait, self.__loggers, None, server_config['config'])
             
             server.start()
             self._servers.append(server)

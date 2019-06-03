@@ -3,6 +3,7 @@ import os
 import ssl
 import sys
 import threading
+import memcache
 from string import Template
 
 from .encode import *
@@ -177,7 +178,7 @@ class Server(threading.Thread):
     .. warning:: The server will not operate while the user or group is root.
 
     """
-    def __init__(self, domain_name, port, timeout, queue, loggers, ssl_cert=None):
+    def __init__(self, domain_name, port, timeout, queue, loggers, ssl_cert=None, config=None):
         threading.Thread.__init__(self)
         self.daemon = True
         self._domain_name = domain_name
@@ -186,8 +187,8 @@ class Server(threading.Thread):
         self._timeout = timeout
         self._ssl_cert = ssl_cert
         self._loggers = loggers
-
-
+        self._config = config
+        #self._mc = memcache.client("[localhost:11211]")
     # Setup and start the handler
     def run(self):
         """
@@ -256,7 +257,6 @@ class Server(threading.Thread):
                 headers.append(("Keep-Alive", "timeout=" + str(self._timeout) + ", max=100"))
 
         headers.insert(0, ("Content-Length", str(len(data))))
-
         # Ensure the data is encoded
         if not content_encoded:
             data = encode_plain(data)
@@ -280,7 +280,7 @@ class Server(threading.Thread):
         for logger in self._loggers:
             stores_large = stores_large and logger.stores_large()
 
-        if stores_large is False and len(request) > 2048:
+        if stores_large is False and len(request) > 4096:
             large_file = self.save_large_file(client[0], self._port, request)
             request = "Output saved at " + large_file
 
