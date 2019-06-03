@@ -119,7 +119,7 @@ class Lightproxy(Server):
         hdpl = {}
         safepath = ''
         queryparam = {}
-        print("prepare data, headers:" + str(headers))
+        #print("prepare data, headers:" + str(headers))
         try:
             urlPath= self._dstURL + path
             rtarget = urllib.parse.urlsplit(urlPath)
@@ -174,15 +174,16 @@ class Lightproxy(Server):
         cache_found = False
         try:
             safepath, hdpl, params = self.prepareData(path,headers)
+            '''
             if safepath:
                 print('actualpath:'+ safepath )
             if params:
                 print('actualparam:'+ str(params) )
             if hdpl:
                 print('actualheaders:'+ str(hdpl) )
-
+            '''
             npath = urllib.parse.urlsplit(path).path
-            print('npath:' + npath)
+            #print('npath:' + npath)
             if self._mc:
                 cachedata = self._memcache.get("gdata_" + npath)
                 cachecode = self._memcache.get("gcode_" + npath)
@@ -250,7 +251,7 @@ class Lightproxy(Server):
                         if option.strip().startswith("boundary="):
                             sep = "\r\n--" + option.split("=")[1].strip()
 
-            print("post:=" + str(post_data))
+            #print("post:=" + str(post_data))
             if form_data :
                 file_data = None
                 post_data = encode.encode_plain("\r\n") + post_data
@@ -299,7 +300,7 @@ class Lightproxy(Server):
                     open("./" + file_name, "wb+").write(file_data)
             else:
                 post_dict.update(urllib.parse.parse_qs(post_data))
-            print(post_dict)
+            #print(post_dict)
             safepath, hdpl, params = self.prepareData(path,headers)
             npath = urllib.parse.urlsplit(path).path
             if self._mc:
