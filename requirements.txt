@@ -1,2 +1,3 @@
 termcolor
-memcache
+python-memcache
+requests

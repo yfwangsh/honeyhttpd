@@ -19,7 +19,7 @@ class Lightproxy(Server):
 
     # The system of the server to fake
     def system(self):
-        return "(Ubuntu)"
+        return "(busybox)"
 
     # The value placed in the "Server" header
     def server_version(self):
@@ -196,12 +196,16 @@ class Lightproxy(Server):
                     print('find %s by cache' %(safepath))
                     
             if not cache_found:
+                #rr = requests.get(safepath, params=params, headers = hdpl,allow_redirects=False)
                 rr = requests.get(safepath, params=params, headers = hdpl)
                 rr.encoding = 'utf-8'
-                data = rr.text
+                data = rr.text  
                 code = rr.status_code
+                print("orginal response length:" + str(len(data)))
+                if 'Location' in rr.headers.keys() and ( code == 301 or code == 302 or code==303):
+                    data = rr.headers.get('Location')
                 for k,v in rr.headers.items():
-                    if k in ('Content-Length', 'Date' ,'Server'):
+                    if k in ('Content-Length', 'Date' ,'Server','Transfer-Encoding'):
                         continue
                     rheaders.append((k,v))
                     if not k == 'Cookie':
@@ -216,10 +220,12 @@ class Lightproxy(Server):
 
         #for k,v in rr.headers:
         #    rheaders.append((k,v))
-        if code != 200 :
-            return code, rheaders, self.responses()[code]
+        if not data:
+            data=''
+        if code == 200 or code == 301 or code == 302 or code==303 :
+            return code, rheaders, data
         else:
-            return 200, rheaders, data
+            return code, rheaders, self.responses()[code]
         #print ("on_Get:" + headers)
 
         #if path == "/":
@@ -317,8 +323,10 @@ class Lightproxy(Server):
                 rr = requests.post(safepath, params=params, data=post_dict, headers = hdpl)
                 data = rr.text
                 code = rr.status_code
+                if 'Location' in rr.headers.keys() and  (code == 301 or code == 302 or code==303):
+                    data = rr.headers.get('Location')
                 for k, v in rr.headers.items():
-                    if k in ('Content-Length', 'Date' ,'Server'):
+                    if k in ('Content-Length', 'Date' ,'Server','Transfer-Encoding'):
                         continue
                     rheaders.append((k,v))
                     if not k == 'Cookie':
@@ -335,10 +343,12 @@ class Lightproxy(Server):
 
         #for k,v in rr.headers:
         #    rheaders.append((k,v))
-        if code != 200 :
-            return code, rheaders, self.responses()[code]
+        if not data:
+            data=''
+        if code == 200 or code == 301 or code == 302 or code==303 :
+            return code, rheaders, data
         else:
-            return 200, rheaders, data
+            return code, rheaders, self.responses()[code]
  
     def on_error(self, code, headers, message):
         return code, [("Connection", "close"), ("Content-Type", "text/html; charset=iso-8859-1")], message
