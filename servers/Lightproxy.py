@@ -6,6 +6,7 @@ import sys
 import os
 import re
 import uuid
+import logging
 import honeyhttpd.lib.encode as encode
 class Lightproxy(Server):
 
@@ -101,6 +102,15 @@ class Lightproxy(Server):
         reqid = str(uuid.uuid5(uuid.NAMESPACE_URL, uuns))
         handler.headers.add_header("Lgtpxy_UUID", reqid)
         return None, None
+    def getlogger(self):
+        logger = logging.getLogger(__name__)
+        logger.setLevel(level = logging.INFO)
+        handler = logging.FileHandler("lightproxy.txt")
+        handler.setLevel(logging.INFO)
+        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        handler.setFormatter(formatter)
+        logger.addHandler(handler)
+        return logger
 
     def __init__(self, domain_name, port, timeout, queue, loggers, ssl_cert=None, config=None):
         super(Lightproxy, self).__init__(domain_name, port, timeout, queue, loggers, ssl_cert, config)
@@ -113,7 +123,10 @@ class Lightproxy(Server):
             self._mc = True
         self._white = self._config['wlsuffix']
         self._mc=False
+        self._mylog = self.getlogger()
 
+    def logproxyinfo(self, message):
+        self._mylog.info(message)
 
     def prepareData(self, path, headers):
         hdpl = {}
@@ -215,7 +228,7 @@ class Lightproxy(Server):
                     self._memcache.set("gcode_" + npath, code)
                     self._memcache.set("gheaders_" + npath, cachehdrs)
         except Exception as e:
-            print("Oops! on Get Internal Error expection:" + repr(e)) 
+            print("Oops! on Get Internal Error for path %s expection: %s" %(path, repr(e))) 
             
 
         #for k,v in rr.headers:
@@ -305,8 +318,8 @@ class Lightproxy(Server):
                 if not os.path.exists(file_name):
                     open("./" + file_name, "wb+").write(file_data)
             else:
-                post_dict.update(urllib.parse.parse_qs(post_data))
-            #print(post_dict)
+                post_dict.update(urllib.parse.parse_qs(str(post_data)))
+            self.logproxyinfo(str(post_dict))
             safepath, hdpl, params = self.prepareData(path,headers)
             npath = urllib.parse.urlsplit(path).path
             if self._mc:
@@ -338,7 +351,7 @@ class Lightproxy(Server):
                 if not findreqid:
                     print('take care of this post request ' + path)
         except Exception as e:
-            print("Oops! Internal Error expection:" + e) 
+            print("Oops! on_POST Internal Error for path %s expection: %s" %(path, repr(e))) 
             
 
         #for k,v in rr.headers:
